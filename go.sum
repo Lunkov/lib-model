@@ -5,6 +5,7 @@ github.com/Lunkov/lib-auth v0.0.0-20201107070414-6d6de6411b93 h1:Ou1b1wBdLQJxzX1
 github.com/Lunkov/lib-auth v0.0.0-20201107070414-6d6de6411b93/go.mod h1:v2jk1eE80EENg2L78reAc6zDT1rLe0P7X99tR34mDC0=
 github.com/Lunkov/lib-cache v0.0.0-20201107063916-1ce5157b84b0 h1:Cn1lw8GM7fjBB/mGo6Fs2jAowf32DBGC2T+uiVQadPQ=
 github.com/Lunkov/lib-cache v0.0.0-20201107063916-1ce5157b84b0/go.mod h1:yF/2bHEkzoMvjBFGlHxNKFkmA/8Hg3FIhQoyiamgVz4=
+github.com/Lunkov/lib-env v0.0.0-20201103163857-e525d33d67ef h1:+S87IIfuH+CMipgPCcYlHhQ03GRdW8FIB7BHIempWnA=
 github.com/Lunkov/lib-env v0.0.0-20201103163857-e525d33d67ef/go.mod h1:06/av9iFrZrtRNN/kGn3iVSXiiJLZS0D4j1BZyk/XdY=
 github.com/Lunkov/lib-map v0.0.0-20201107162143-2b9069befb9b h1:RHoED6nRsYV6r0rL5xiuhSKI7v9+ctjBELPxhUkXKBE=
 github.com/Lunkov/lib-map v0.0.0-20201107162143-2b9069befb9b/go.mod h1:3vsqHQ4j8KejtFTKkAsjKD/CdnTLr05QvYnSn1SsL9Q=
