@@ -11,6 +11,8 @@ import (
   "github.com/golang/glog"
   "github.com/jinzhu/gorm"
 
+  _ "github.com/lib/pq" // here
+
   "gopkg.in/yaml.v2"
 
   "github.com/nats-io/nats.go"
