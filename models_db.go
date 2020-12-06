@@ -119,7 +119,7 @@ func dbTableGet(m *ModelInfo, modelName string, where string, fields []string, o
   }
   if glog.V(9) {
     glog.Errorf("DBG: Model(%s) WHERE: '%s'", modelName, where)
-  }  
+  }
   if where != "" {
     sql1 = sql1.Where(where)
   }
@@ -175,6 +175,9 @@ func DBInsert(modelName string, user *base.User, data *map[string]interface{}) b
     return false
   } else {
     tr.Commit()
+    if glog.V(9) {
+      glog.Errorf("DBG: Model(%s) Insert(data=%v)", modelName, iv)
+    }
   }
 
   go sendNatsMsg(&model, dbCreate, iv)
