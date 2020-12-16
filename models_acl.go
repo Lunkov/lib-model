@@ -74,7 +74,7 @@ func aclCheck(model *ModelInfo, user *base.User, action TypeActionDB) bool {
     return true
   }
   if user == nil && len(model.Permissions) > 0 {
-    _, ok = model.Permissions["other"]
+    _, ok := model.Permissions["other"]
     if !ok {
       glog.Errorf("ERR: MODELS ACL: User(NULL) BUT len(model.Permissions) = %d", len(model.Permissions))
       return false
