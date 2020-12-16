@@ -82,11 +82,19 @@ func aclCheck(model *ModelInfo, user *base.User, action TypeActionDB) bool {
   }
   crud, ok := findGroupCRUD(model, user)
   if !ok {
-    glog.Errorf("ERR: MODELS ACL: USER(%s). Access denied. MODEL '%s' CRUD not found", user.EMail, model.CODE)
+    if user != nil {
+      glog.Errorf("ERR: MODELS ACL: USER(%s). Access denied. MODEL '%s' CRUD not found", user.EMail, model.CODE)
+    } else {
+      glog.Errorf("ERR: MODELS ACL: USER == NULL. Action denied.")
+    }
     return false
   }
   if (crud.CRUDm & action) == 0 {
-    glog.Errorf("ERR: MODELS ACL: USER(%s). Action denied.", user.EMail)
+    if user != nil {
+      glog.Errorf("ERR: MODELS ACL: USER(%s). Action denied.", user.EMail)
+    } else {
+      glog.Errorf("ERR: MODELS ACL: USER == NULL. Action denied.")
+    }
     return false
   }
   return true
@@ -123,17 +131,19 @@ func aclIsOwner(modelName string, user *base.User, data *map[string]interface{})
 }
 
 func findGroupCRUD(model *ModelInfo, user *base.User) (*ModelCRUD, bool) {
-  crud, ok := model.Permissions[user.Group]
-  if ok {
-    return &crud, true
-  }
-  for _, group := range user.Groups {
-    crud, ok := model.Permissions[group]
+  if user != nil {
+    crud, ok := model.Permissions[user.Group]
     if ok {
       return &crud, true
     }
+    for _, group := range user.Groups {
+      crud, ok := model.Permissions[group]
+      if ok {
+        return &crud, true
+      }
+    }
   }
-  crud, ok = model.Permissions["other"]
+  crud, ok := model.Permissions["other"]
   if ok {
     return &crud, true
   }
