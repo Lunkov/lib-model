@@ -9,6 +9,8 @@ github.com/Lunkov/lib-env v0.0.0-20201103163857-e525d33d67ef h1:+S87IIfuH+CMipgP
 github.com/Lunkov/lib-env v0.0.0-20201103163857-e525d33d67ef/go.mod h1:06/av9iFrZrtRNN/kGn3iVSXiiJLZS0D4j1BZyk/XdY=
 github.com/Lunkov/lib-map v0.0.0-20201107162143-2b9069befb9b h1:RHoED6nRsYV6r0rL5xiuhSKI7v9+ctjBELPxhUkXKBE=
 github.com/Lunkov/lib-map v0.0.0-20201107162143-2b9069befb9b/go.mod h1:3vsqHQ4j8KejtFTKkAsjKD/CdnTLr05QvYnSn1SsL9Q=
+github.com/Lunkov/lib-map v0.0.0-20210105092627-749e81029ada h1:6E3aiHwS4xtgJGpg06r9FnQ6LrRF2OLEKGVwLzrleGg=
+github.com/Lunkov/lib-map v0.0.0-20210105092627-749e81029ada/go.mod h1:3vsqHQ4j8KejtFTKkAsjKD/CdnTLr05QvYnSn1SsL9Q=
 github.com/Lunkov/lib-reflect v0.0.0-20201108175708-117a6dd2b1f7 h1:6aZGHqttz7MJlf2tGvsDYqnA3guOYfzoNziYl0vYQFc=
 github.com/Lunkov/lib-reflect v0.0.0-20201108175708-117a6dd2b1f7/go.mod h1:tW0QDqnb+LF7nIijRqhX1PU26poke4PyJ4eaRaqzOlw=
 github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
@@ -44,6 +46,8 @@ github.com/gomodule/redigo v2.0.0+incompatible/go.mod h1:B4C85qUVwatsJoIUNIfCRsp
 github.com/google/go-cmp v0.1.1-0.20171103154506-982329095285/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/uuid v1.1.2 h1:EVhdT+1Kseyi1/pUmXKaFxYsDNy9RQYkMWRH68J/W7Y=
 github.com/google/uuid v1.1.2/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/google/uuid v1.1.4 h1:0ecGp3skIrHWPNGPJDaBIghfA6Sp7Ruo2Io8eLKzWm0=
+github.com/google/uuid v1.1.4/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/googleapis/gax-go v2.0.0+incompatible/go.mod h1:SFVmujtThgffbyetf+mdk2eWhX2bMyUtNHzFKcPA9HY=
 github.com/gregjones/httpcache v0.0.0-20170920190843-316c5e0ff04e/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
 github.com/hashicorp/hcl v0.0.0-20170914154624-68e816d1c783/go.mod h1:oZtUIOe8dh44I2q6ScRibXws4Ajl+d+nod3AaR9vL5w=

@@ -102,13 +102,21 @@ func dbTableGet(m *ModelInfo, modelName string, where string, fields []string, o
   if len(fields) > 0 && fields[0] != "" {
     sql1 = sql1.Select(fields)
   }
-
-  str_order := strings.Join(order[:], ",")
-  if glog.V(9) {
-    glog.Errorf("DBG: Model(%s) Order: '%s'\n", modelName, str_order)
-  }
-  if str_order != "" {
-    sql1 = sql1.Order(str_order)
+  if len(order) > 0 {
+    t_orders := make([]string, 0)
+    r := strings.NewReplacer("desc", "", "acs", "") 
+    for _, item := range order {
+      if maps.FieldExists(m.RefClass, r.Replace(item)) {
+        t_orders = append(t_orders, item)
+      }
+    }
+    str_order := strings.Join(t_orders[:], ".")
+    if glog.V(9) {
+      glog.Errorf("DBG: Model(%s) Order: '%s'\n", modelName, str_order)
+    }
+    if str_order != "" {
+      sql1 = sql1.Order(str_order)
+    }
   }
   sql1 = sql1.Offset(offset)
   if limit > 0 {
