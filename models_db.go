@@ -105,7 +105,7 @@ func dbTableGet(m *ModelInfo, modelName string, where string, fields []string, o
   if len(order) > 0 {
     t_orders := make([]string, 0)
     r := strings.NewReplacer("desc", "", "acs", "") 
-    p := reflect.New(getBaseByNameR(model.BaseClass))
+    p := reflect.New(getBaseByNameR(m.BaseClass))
     for _, item := range order {
       if maps.FieldExists(p, r.Replace(item)) {
         t_orders = append(t_orders, item)
