@@ -12,9 +12,11 @@ import (
   "github.com/jinzhu/gorm"
   "gopkg.in/yaml.v2"
 
-  "github.com/Lunkov/lib-env"
+//  "github.com/Lunkov/lib-env"
+  "github.com/Lunkov/lib-map"
   "github.com/Lunkov/lib-auth/base"
   
+  "github.com/Lunkov/lib-model/fields"
   "github.com/Lunkov/lib-model/models"
 )
 
@@ -37,37 +39,6 @@ func (p DocInfo) DBMigrate(db *gorm.DB, tablename string) {
 	db.Table(tablename).AutoMigrate(&DocInfo{})
 }
 
-func (p models.Organization) Init(dbHandle *gorm.DB, configPath string, tableName string) {
-  env.LoadFromYMLFilesDB(dbHandle, configPath + "/" + tableName, Org_loadYAMLDB)
-}
-
-
-func Org_loadYAMLDB(dbHandle *gorm.DB, filename string, yamlFile []byte) int {
-  var err error
-  var mapTmp = make(map[string]models.Organization)
-
-  err = yaml.Unmarshal(yamlFile, mapTmp)
-  if err != nil {
-    glog.Errorf("ERR: ORG: yamlFile(%s): YAML: %v", filename, err)
-  }
-  if(len(mapTmp) > 0) {
-    for _, value := range mapTmp {
-      if dbHandle != nil {
-        var valTmp models.Organization
-        if errW := dbHandle.First(&valTmp, "code = ?", value.CODE).Error; errW != nil {
-          err = dbHandle.Create(&value).Error
-        } else {
-          err = dbHandle.Save(&value).Error
-        }
-        if err != nil {
-          glog.Errorf("ERR: ORG: yaml.Marshal: yamlFile(%s): %s: %v (value = %v)", filename, value.CODE, err, value)
-        }
-      }
-    }
-  }
-  return len(mapTmp)
-}
-
 /////////////////////////
 // TESTS
 /////////////////////////
@@ -80,7 +51,7 @@ func TestCheckModelsAutoMigrate(t *testing.T) {
   conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
   TEST_MODEL := "test_org"
   
-  BaseAdd("organization", reflect.TypeOf(Organization{}))
+  BaseAdd("organization", reflect.TypeOf(models.Organization{}))
   BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
 
   Init(conn, conn, "./etc.test/")
@@ -93,7 +64,7 @@ func TestCheckModelsAutoMigrate(t *testing.T) {
   assert.Equal(t, nil, pc)
 
   pc = GetClass(TEST_MODEL)
-  assert.Equal(t, &Organization{}, pc)
+  assert.Equal(t, &models.Organization{}, pc)
   
 
   //userUser  := base.User{EMail: "user@",  Group: "user", Groups: []string{"admin_system", "user_crm"}}
@@ -113,7 +84,7 @@ func TestCheckModelsByClass(t *testing.T) {
   conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
   TEST_MODEL := "test_org"
   
-  BaseAdd("organization", reflect.TypeOf(Organization{}))
+  BaseAdd("organization", reflect.TypeOf(models.Organization{}))
   BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
 
   Init(conn, conn, "./etc.test/")
@@ -124,11 +95,11 @@ func TestCheckModelsByClass(t *testing.T) {
 
   /// TEST INSERT WITH CLASS  
   uid1, _ := uuid.Parse("00000002-0003-0004-0005-000000000001")
-  test_org1 := Organization{ID: uid1, CreatedAt: time.Now(), UpdatedAt: time.Now(), CODE: "test.org.1", Name: "OOO `Organization #1`", AddressLegal: FAddress{Country: "Russia", Index: "127282", City: "Moscow"}}
+  test_org1 := models.Organization{ID: uid1, CreatedAt: time.Now(), UpdatedAt: time.Now(), CODE: "test.org.1", Name: "OOO `Organization #1`", AddressLegal: fields.Address{Country: "Russia", Index: "127282", City: "Moscow"}}
   
   // glog.Errorf("!!!>>>>>>>: ORG: test_org1(%v): %v", reflect.TypeOf(test_org1), test_org1)
   db.Table(TEST_MODEL).Create(&test_org1)
-  test_org11 := Organization{}
+  test_org11 := models.Organization{}
   errW1 := db.Table(TEST_MODEL).First(&test_org11, "code = ?", "test.org.1").Error
   assert.Equal(t, nil, errW1)
   // TODO: different time values!!!
@@ -141,7 +112,7 @@ func TestCheckModelsByClassUnderMap(t *testing.T) {
   conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
   TEST_MODEL := "test_org"
   
-  BaseAdd("organization", reflect.TypeOf(Organization{}))
+  BaseAdd("organization", reflect.TypeOf(models.Organization{}))
   BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
 
   Init(conn, conn, "./etc.test/")
@@ -153,10 +124,10 @@ func TestCheckModelsByClassUnderMap(t *testing.T) {
   /// TEST INSERT WITH CLASS UNDER MAP
   uid2, _ := uuid.Parse("00000002-0003-0004-0005-000000000002")
   test_map_org2 := map[string]interface{}{"id": uid2, "created_at": time.Now(), "updated_at": time.Now(), "code": "test.org.2", "address_legal.city":"Moscow", "address_legal.country":"Russia", "address_legal.index":"127282", "bank.0.account":"111111134583459834573279", "bank.0.bik":"1111111", "bank.1.account":"2111111134583459834573279", "bank.1.bik":"21111111", "name":"OOO `Org #2`"}
-  test_org2 := Organization{}
-  ConvertFromMap(&test_org2, &test_map_org2)
+  test_org2 := models.Organization{}
+  maps.ConvertFromMap(&test_org2, &test_map_org2)
   db.Table(TEST_MODEL).Create(&test_org2)
-  test_org21 := Organization{}
+  test_org21 := models.Organization{}
   errW2 := db.Table(TEST_MODEL).First(&test_org21, "code = ?", "test.org.2").Error
   assert.Equal(t, nil, errW2)
   test_org21.CreatedAt = test_org2.CreatedAt
@@ -176,7 +147,7 @@ func TestCheckModelsByInterfaceUnderMap(t *testing.T) {
   
   conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
   
-  BaseAdd("organization", reflect.TypeOf(Organization{}))
+  BaseAdd("organization", reflect.TypeOf(models.Organization{}))
   BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
 
   Init(conn, conn, "./etc.test/")
@@ -187,15 +158,15 @@ func TestCheckModelsByInterfaceUnderMap(t *testing.T) {
 
   /// TEST INSERT WITH INTERFACE UNDER MAP
   uid3, _ := uuid.Parse("00000002-0003-0004-0005-000000000003")
-  test_org1 := Organization{ID: uid3, CreatedAt: time.Now(), UpdatedAt: time.Now(), CODE: "test.org.3", Name: "OOO `Org #2`", AddressLegal: FAddress{Country: "Russia", Index: "127282", City: "Moscow"}, Bank: FBankAccounts{{BIK: "1111111", Account: "111111134583459834573279"}, {BIK: "21111111", Account: "2111111134583459834573279"}}}
+  test_org1 := models.Organization{ID: uid3, CreatedAt: time.Now(), UpdatedAt: time.Now(), CODE: "test.org.3", Name: "OOO `Org #2`", AddressLegal: fields.Address{Country: "Russia", Index: "127282", City: "Moscow"}, Bank: fields.BankAccounts{{BIK: "1111111", Account: "111111134583459834573279"}, {BIK: "21111111", Account: "2111111134583459834573279"}}}
   test_map_org3 := map[string]interface{}{"id": uid3, "created_at": test_org1.CreatedAt, "updated_at": test_org1.UpdatedAt, "code": "test.org.3", "address_legal.city":"Moscow", "address_legal.country":"Russia", "address_legal.index":"127282", "bank.0.account":"111111134583459834573279", "bank.0.bik":"1111111", "bank.1.account":"2111111134583459834573279", "bank.1.bik":"21111111", "name":"OOO `Org #2`"}
   
   test_org3 := GetClass(TEST_MODEL)
-  ConvertFromMap(test_org3, &test_map_org3)
+  maps.ConvertFromMap(test_org3, &test_map_org3)
 
   db.Table(TEST_MODEL).Create(test_org3)
   
-  test_org31 := Organization{}
+  test_org31 := models.Organization{}
   errW3 := db.Table(TEST_MODEL).First(&test_org31, "code = ?", "test.org.3").Error
   assert.Equal(t, nil, errW3)
   test_org1.CreatedAt = test_org31.CreatedAt
@@ -214,7 +185,7 @@ func TestCheckModelsByInterface(t *testing.T) {
   TEST_MODEL := "test_org"
 
   conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
-  BaseAdd("organization", reflect.TypeOf(Organization{}))
+  BaseAdd("organization", reflect.TypeOf(models.Organization{}))
   BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
 
   Init(conn, conn, "./etc.test/")
@@ -229,8 +200,8 @@ func TestCheckModelsByInterface(t *testing.T) {
   oki := DBInsert(TEST_MODEL, nil, &map[string]interface{}{"id": uid4, "created_at": time.Now(), "updated_at": time.Now(), "code": "test.org.4", "name": "ORG `Test NEW 21`", "address_legal.city": "Moscow", "address_legal.index": "127282", "address_legal.country": "Russia", "bank.0.bik": "0065674747", "bank.0.account": "2342345446560065674747"})
   assert.Equal(t, true, oki)
   
-  test_org1 := Organization{ID: uid4, CreatedAt: time.Now(), UpdatedAt: time.Now(), CODE: "test.org.4", Name: "ORG `Test NEW 21`", AddressLegal: FAddress{Country: "Russia", Index: "127282", City: "Moscow"}, Bank: FBankAccounts{{BIK: "0065674747", Account: "2342345446560065674747"}}}
-  test_org31 := Organization{}
+  test_org1 := models.Organization{ID: uid4, CreatedAt: time.Now(), UpdatedAt: time.Now(), CODE: "test.org.4", Name: "ORG `Test NEW 21`", AddressLegal: fields.Address{Country: "Russia", Index: "127282", City: "Moscow"}, Bank: fields.BankAccounts{{BIK: "0065674747", Account: "2342345446560065674747"}}}
+  test_org31 := models.Organization{}
 
   errW3 := db.Table(TEST_MODEL).First(&test_org31, "code = ?", "test.org.4").Error
   assert.Nil(t, errW3)
@@ -244,15 +215,15 @@ func TestCheckLoadOrg(t *testing.T) {
   yamlFile, err := ioutil.ReadFile("./etc.test/data/test_org/moslift.msk.yaml")
   assert.Equal(t, nil, err)
   
-  orgF := make(map[string]Organization)
+  orgF := make(map[string]models.Organization)
   err = yaml.Unmarshal(yamlFile, orgF)
   assert.Equal(t, nil, err)
   
   uid1, _ := uuid.Parse("29db360f-045d-11ea-8654-bcaec5b972a6")
-  orgFN := Organization{ID: uid1,
+  orgFN := models.Organization{ID: uid1,
                         Name: "Мослифт",
                         CODE: "moslift.msk.rf",
-                        CEO: FCompanyPerson{Position: "Генеральный директор", FirstName: "Вартан", LastName: "Авакян", MiddleName: "Нахапетович"},
+                        CEO: fields.CompanyPerson{Position: "Генеральный директор", FirstName: "Вартан", LastName: "Авакян", MiddleName: "Нахапетович"},
                         UrlLogo: "/assets/images/logo/moslift-nosign.png",
                         Description: "ОАО «Мослифт» является крупнейшей в России специализированной организацией, которая осуществляет весь комплекс работ по проектированию, поставке, монтажу и техническому обслуживанию лифтов, инвалидных подъёмников, траволаторов и эскалаторов, автопарковочных и объединенных диспетчерских систем."}
   assert.Equal(t, orgFN, orgF["moslift.msk.rf"])
@@ -266,7 +237,7 @@ func TestCheckModelsGetList(t *testing.T) {
 
 	glog.Info("Logging configured")
   
-  BaseAdd("organization", reflect.TypeOf(Organization{}))
+  BaseAdd("organization", reflect.TypeOf(models.Organization{}))
   BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
 
   TEST_MODEL := "test_org"
