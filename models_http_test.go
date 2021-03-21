@@ -26,6 +26,11 @@ func TestHTTPWhere(t *testing.T) {
   o1 = parserOR(in)
   assert.Equal(t, o1_need, o1)
 
+  in = "(age.not.null)"
+  o1_need = "age IS NOT null"
+  o1 = parserOR(in)
+  assert.Equal(t, o1_need, o1)
+
   in = ""
   o1_need = ""
   o1 = parserOR(in)

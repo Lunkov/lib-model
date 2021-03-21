@@ -69,7 +69,7 @@ func operators(op string) string {
   case "is":
      return "IS"
   case "not":
-     return "NOT"
+     return "IS NOT"
   }
   return ""
 }

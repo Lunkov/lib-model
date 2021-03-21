@@ -126,7 +126,7 @@ func Init(connectStrWrite string, connectStrRead string, confPath string) bool {
     dbHandleWrite.LogMode(true)
     dbHandleRead.LogMode(true)
   }
-  env.LoadFromYMLFilesDB(dbHandleWrite, configPath + "/models", loadYAML)
+  env.LoadFromFilesDB(dbHandleWrite, configPath + "/models", "", loadYAML)
   
   return true
 }
@@ -143,12 +143,12 @@ func LoadData() {
 func GetClass(modelName string) interface{} {
   model, ok := mods[modelName]
   if !ok {
-    glog.Errorf("ERR: Model(%s) not found\n", modelName)
+    glog.Errorf("ERR: Model(%s) not found", modelName)
     return nil
   }
   ref := getBaseByNameR(model.BaseClass)
   if !ok {
-    glog.Errorf("ERR: BaseClass(%s) not found\n", model.BaseClass)
+    glog.Errorf("ERR: BaseClass(%s) not found", model.BaseClass)
     return nil
   }
   return reflect.New(ref).Interface()
