@@ -11,7 +11,7 @@ import (
   "github.com/golang/glog"
   "github.com/jinzhu/gorm"
 
-  _ "github.com/lib/pq" // here
+  _ "github.com/lib/pq"
 
   "gopkg.in/yaml.v2"
 
@@ -20,7 +20,7 @@ import (
   "github.com/Lunkov/lib-cache"
   "github.com/Lunkov/lib-env"
   "github.com/Lunkov/lib-map"
-  "github.com/Lunkov/lib-reflect"
+  "github.com/Lunkov/lib-ref"
 )
 
 type InfoColumn struct {
@@ -256,7 +256,7 @@ func RunMethod(modelMethod string, args ...interface{}) bool {
     return false
   }
 
-  ref.RunMethodIfExists(model.CODE, getBaseByNameR(model.BaseClass), arM[1], args...)
+  ref.RunMethodIfExists(getBaseByName(model.BaseClass), arM[1], args...)
 
   return true
 }

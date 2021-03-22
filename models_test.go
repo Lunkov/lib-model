@@ -12,7 +12,6 @@ import (
   "github.com/jinzhu/gorm"
   "gopkg.in/yaml.v2"
 
-//  "github.com/Lunkov/lib-env"
   "github.com/Lunkov/lib-map"
   "github.com/Lunkov/lib-auth/base"
   
@@ -36,7 +35,7 @@ type DocInfo struct {
 
 func (p DocInfo) DBMigrate(db *gorm.DB, tablename string) {
   db.DropTable(tablename)
-	db.Table(tablename).AutoMigrate(&DocInfo{})
+  db.Table(tablename).AutoMigrate(&DocInfo{})
 }
 
 /////////////////////////
@@ -44,9 +43,9 @@ func (p DocInfo) DBMigrate(db *gorm.DB, tablename string) {
 /////////////////////////
 func TestCheckModelsAutoMigrate(t *testing.T) {
   flag.Set("alsologtostderr", "true")
-	flag.Set("log_dir", ".")
-	flag.Set("v", "9")
-	flag.Parse()
+  flag.Set("log_dir", ".")
+  flag.Set("v", "9")
+  flag.Parse()
 
   conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
   TEST_MODEL := "test_org"

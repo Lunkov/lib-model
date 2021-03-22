@@ -13,7 +13,7 @@ import (
 
   "github.com/Lunkov/lib-auth/base"
   "github.com/Lunkov/lib-map"
-  "github.com/Lunkov/lib-reflect"
+  "github.com/Lunkov/lib-ref"
 )
 
 const tblUserACL = "acl_user"
@@ -37,7 +37,7 @@ func DBAutoMigrate(connectStr string) bool {
   for _, model := range mods {
     class := getBaseByName(model.BaseClass)
 
-    _, ok := ref.RunMethodIfExists(model.CODE, getBaseByName(model.BaseClass), "DBMigrate", db, model.CODE)
+    _, ok := ref.RunMethodIfExists(getBaseByName(model.BaseClass), "DBMigrate", db, model.CODE)
 
     if !ok && class != nil {
       cl := reflect.New(getBaseByNameR(model.BaseClass))
