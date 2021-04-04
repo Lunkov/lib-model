@@ -5,18 +5,16 @@ import (
   "github.com/golang/glog"
 )
 
-var typeRegistry = make(map[string]reflect.Type)
-
-func BaseAdd(name string, class reflect.Type) {
-  typeRegistry[name] = class
+func (db *DBConn) BaseAdd(name string, class reflect.Type) {
+  db.typeRegistry[name] = class
 }
 
-func BaseCount() int {
-  return len(typeRegistry)
+func (db *DBConn) BaseCount() int {
+  return len(db.typeRegistry)
 }
 
-func getBaseByName(name string) interface{} {
-  item, ok := typeRegistry[name]
+func (db *DBConn) getBaseByName(name string) interface{} {
+  item, ok := db.typeRegistry[name]
   if !ok {
     glog.Errorf("ERR: BaseModel(%s) not found\n", name)
     return nil
@@ -24,8 +22,8 @@ func getBaseByName(name string) interface{} {
   return reflect.ValueOf(item).Interface()
 }
 
-func getBaseByNameR(name string) reflect.Type {
-  item, ok := typeRegistry[name]
+func (db *DBConn) getBaseByNameR(name string) reflect.Type {
+  item, ok := db.typeRegistry[name]
   if !ok {
     glog.Errorf("ERR: BaseModel(%s) not found\n", name)
     return nil

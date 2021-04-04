@@ -9,10 +9,7 @@ import (
   "github.com/google/uuid"
   "github.com/golang/glog"
   
-  "github.com/jinzhu/gorm"
-
   "github.com/Lunkov/lib-auth/base"
-  "github.com/Lunkov/lib-map"
   "github.com/Lunkov/lib-ref"
 )
 
@@ -20,56 +17,14 @@ const tblUserACL = "acl_user"
 const tblGroupACL = "acl_group"
 
 
-func DBAutoMigrate(connectStr string) bool {
-  db, err := gorm.Open("postgres", connectStr)
-  if err != nil {
-    glog.Errorf("ERR: MODELS: failed to connect database: %v\n", err)
-    return false
-  }
-  if glog.V(9) {
-    db.LogMode(true)
-  }
-  defer db.Close()
-  
-  createUserACL := false
-  createGroupACL := false
-  
-  for _, model := range mods {
-    class := getBaseByName(model.BaseClass)
-
-    _, ok := ref.RunMethodIfExists(getBaseByName(model.BaseClass), "DBMigrate", db, model.CODE)
-
-    if !ok && class != nil {
-      cl := reflect.New(getBaseByNameR(model.BaseClass))
-      db.Table(model.CODE).AutoMigrate(cl.Elem().Interface())
-      
-      if model.UseUserTablePermissions {
-        db.Table(model.CODE + "_acl_user").AutoMigrate(PermissionUser{})
-        createUserACL = true
-      }
-      if model.UseGroupTablePermissions {
-        db.Table(model.CODE + "_acl_group").AutoMigrate(PermissionGroup{})
-        createGroupACL = true
-      }
-    }
-  }
-  if createUserACL {
-    db.Table(tblUserACL).AutoMigrate(UserACL{})
-  }
-  if createGroupACL {
-    db.Table(tblGroupACL).AutoMigrate(GroupACL{})
-  }
-  return true
-}
-
-func DBTableGet(modelName string, user *base.User, fields []string, order []string, offset int, limit int) ([]byte, int, bool) {
-  m, ok := mods[modelName]
+func (db *DBConn) DBTableGet(modelName string, user *base.User, fields []string, order []string, offset int, limit int) ([]byte, int, bool) {
+  m, ok := db.mods[modelName]
   if !ok {
     glog.Errorf("ERR: Model(%s) not found\n", modelName)
     return []byte(""), 0, false
   }
 
-  if !aclCheck(&m, user, dbRead) {
+  if !db.aclCheck(&m, user, dbRead) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Read: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -78,26 +33,26 @@ func DBTableGet(modelName string, user *base.User, fields []string, order []stri
     return []byte(""), 0, false
   }
   
-  return dbTableGet(&m, modelName, "", fields, order, offset, limit)
+  return db.dbTableGet(&m, modelName, "", fields, order, offset, limit)
 }
 
-func dbTableGet(m *ModelInfo, modelName string, where string, fields []string, order []string, offset int, limit int) ([]byte, int, bool) {
+func (db *DBConn) dbTableGet(m *ModelInfo, modelName string, where string, fields []string, order []string, offset int, limit int) ([]byte, int, bool) {
 
   count := 0
   if m.UseDeletedAt {
     if where != "" {
-      dbHandleRead.Table(m.CODE).Select("count(id)").Where("deleted_at IS NULL AND " + where).Count(&count)
+      db.HandleRead.Table(m.CODE).Select("count(id)").Where("deleted_at IS NULL AND " + where).Count(&count)
     } else {
-      dbHandleRead.Table(m.CODE).Select("count(id)").Where("deleted_at IS NULL").Count(&count)
+      db.HandleRead.Table(m.CODE).Select("count(id)").Where("deleted_at IS NULL").Count(&count)
     }
   } else {
-    dbHandleRead.Table(m.CODE).Select("count(id)").Where(where).Count(&count)
+    db.HandleRead.Table(m.CODE).Select("count(id)").Where(where).Count(&count)
   }
 
   var rowres []map[string]interface{}
   var jsonRes []byte
   
-  sql1 := dbHandleRead.Table(m.CODE)
+  sql1 := db.HandleRead.Table(m.CODE)
   
   if len(fields) > 0 && fields[0] != "" {
     sql1 = sql1.Select(fields)
@@ -105,9 +60,9 @@ func dbTableGet(m *ModelInfo, modelName string, where string, fields []string, o
   if len(order) > 0 {
     t_orders := make([]string, 0)
     r := strings.NewReplacer("desc", "", "acs", "") 
-    p := reflect.New(getBaseByNameR(m.BaseClass))
+    p := reflect.New(db.getBaseByNameR(m.BaseClass))
     for _, item := range order {
-      if maps.FieldExists(p, r.Replace(item)) {
+      if ref.FieldExists(p, r.Replace(item)) {
         t_orders = append(t_orders, item)
       }
     }
@@ -141,24 +96,24 @@ func dbTableGet(m *ModelInfo, modelName string, where string, fields []string, o
   defer rows.Close()
 
   for rows.Next() {
-    row := GetClass(modelName)
+    row := db.GetClass(modelName)
     sql1.ScanRows(rows, row)
     
-    rowMap := maps.ConvertToMap(row)
+    rowMap := ref.ConvertToMap(row)
     rowres = append(rowres, rowMap)
   }
   jsonRes, _ = json.Marshal(rowres)
   return jsonRes, count, true
 }
 
-func DBInsert(modelName string, user *base.User, data *map[string]interface{}) bool {
-  model, ok := mods[modelName]
+func (db *DBConn) DBInsert(modelName string, user *base.User, data *map[string]interface{}) bool {
+  model, ok := db.mods[modelName]
   if !ok {
     glog.Errorf("ERR: Model(%s) not found\n", modelName)
     return false
   }
 
-  if !aclCheck(&model, user, dbCreate) {
+  if !db.aclCheck(&model, user, dbCreate) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Create: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -167,15 +122,15 @@ func DBInsert(modelName string, user *base.User, data *map[string]interface{}) b
     return false
   }
 
-  iv := GetClass(modelName)
+  iv := db.GetClass(modelName)
   if model.UseOwnerField {
-    if !aclSetOwner(modelName, user, data) {
+    if !db.aclSetOwner(modelName, user, data) {
       return false
     }
   }
-  maps.ConvertFromMap(iv, data)
+  ref.ConvertFromMap(iv, data)
     
-  sql1 := dbHandleWrite.Table(model.CODE)
+  sql1 := db.HandleWrite.Table(model.CODE)
   tr := sql1.Begin()
   err := tr.Create(iv).Error
   if err != nil {
@@ -189,18 +144,18 @@ func DBInsert(modelName string, user *base.User, data *map[string]interface{}) b
     }
   }
 
-  go sendNatsMsg(&model, dbCreate, iv)
+  go db.sendNatsMsg(&model, dbCreate, iv)
   
   return true
 }
 
-func DBUpdate(modelName string, user *base.User, data *map[string]interface{}) bool {
-  model, ok := mods[modelName]
+func (db *DBConn) DBUpdate(modelName string, user *base.User, data *map[string]interface{}) bool {
+  model, ok := db.mods[modelName]
   if !ok {
     glog.Errorf("ERR: Model(%s) not found\n", modelName)
     return false
   }
-  if !aclCheck(&model, user, dbUpdate) {
+  if !db.aclCheck(&model, user, dbUpdate) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Update: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -209,18 +164,18 @@ func DBUpdate(modelName string, user *base.User, data *map[string]interface{}) b
     return false
   }
 
-  sqlRead := dbHandleRead.Table(model.CODE)
+  sqlRead := db.HandleRead.Table(model.CODE)
 
   var err error
   err = nil
 
-  readIV := GetClass(modelName)
-  uid, oku := maps.GetMapFieldUUID(data, "ID")
+  readIV := db.GetClass(modelName)
+  uid, oku := ref.GetMapFieldUUID(data, "ID")
   if !oku {
     glog.Errorf("ERR: Model(%s) not found ID\n", modelName)
     return false
   }
-  if !aclDBCheckID(&model, user, uid, dbUpdate) {
+  if !db.aclDBCheckID(&model, user, uid, dbUpdate) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Update: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -228,7 +183,7 @@ func DBUpdate(modelName string, user *base.User, data *map[string]interface{}) b
     }
     return false
   }
-  ok = maps.SetFieldUUID(readIV, uid, "ID")
+  ok = ref.SetFieldUUID(readIV, uid, "ID")
   if !ok {
     glog.Errorf("ERR: Model(%s) Don`t SET ID<%v>\n", modelName, uid)
     return false
@@ -238,22 +193,22 @@ func DBUpdate(modelName string, user *base.User, data *map[string]interface{}) b
     glog.Errorf("ERR: Item(%s => ID<%v>) not found\n", modelName, uid)
     return false
   }
-  iv := GetClass(modelName)
+  iv := db.GetClass(modelName)
   if model.UseOwnerField {
-    if !aclSetOwner(modelName, user, data) {
+    if !db.aclSetOwner(modelName, user, data) {
       return false
     }
   }
   if model.SimpleUpdateMode {
-    maps.ConvertFromMap(iv, data)
+    ref.ConvertFromMap(iv, data)
   } else {
-    dataRead := maps.ConvertToMap(readIV)
-    maps.UnionMaps(&dataRead, data)
-    maps.ConvertFromMap(iv, &dataRead)
+    dataRead := ref.ConvertToMap(readIV)
+    ref.UnionMapsLK(&dataRead, data)
+    ref.ConvertFromMap(iv, &dataRead)
   }
 
   /// Update
-  sqlWrite := dbHandleWrite.Table(model.CODE)
+  sqlWrite := db.HandleWrite.Table(model.CODE)
   tr := sqlWrite.Begin()
   err = tr.Save(iv).Error
   if err != nil {
@@ -262,19 +217,19 @@ func DBUpdate(modelName string, user *base.User, data *map[string]interface{}) b
   } else {
     tr.Commit()
   }
-  go sendNatsMsg(&model, dbUpdate, iv)
+  go db.sendNatsMsg(&model, dbUpdate, iv)
   
   return true
 }
 
 
-func DBGetItemByID(modelName string, user *base.User, id string) ([]byte, bool) {
-  model, ok := mods[modelName]
+func (db *DBConn) DBGetItemByID(modelName string, user *base.User, id string) ([]byte, bool) {
+  model, ok := db.mods[modelName]
   if !ok {
     glog.Errorf("ERR: Model(%s) not found\n", modelName)
     return nil, false
   }
-  if !aclCheck(&model, user, dbRead) {
+  if !db.aclCheck(&model, user, dbRead) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Read: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -289,9 +244,9 @@ func DBGetItemByID(modelName string, user *base.User, id string) ([]byte, bool) 
     return nil, false
   }
   
-  sql1 := dbHandleRead.Table(model.CODE)
+  sql1 := db.HandleRead.Table(model.CODE)
 
-  iv := GetClass(modelName)
+  iv := db.GetClass(modelName)
   sql1 = sql1.Where("id = ?", uid)
   if model.UseOwnerField {
     sql1 = sql1.Where("owner->>'id' = ? OR work_groups @> '[{\"name\": \"?\"}]'", user.ID, user.Group)
@@ -303,19 +258,19 @@ func DBGetItemByID(modelName string, user *base.User, id string) ([]byte, bool) 
     return nil, false
   }
   
-  rowMap := maps.ConvertToMap(iv)
+  rowMap := ref.ConvertToMap(iv)
   jsonRes, _ := json.Marshal(rowMap)
   
   return jsonRes, true
 }
 
-func DBGetItemByCODE(modelName string, user *base.User, code string) ([]byte, bool) {
-  model, ok := mods[modelName]
+func (db *DBConn) DBGetItemByCODE(modelName string, user *base.User, code string) ([]byte, bool) {
+  model, ok := db.mods[modelName]
   if !ok {
     glog.Errorf("ERR: Model(%s) not found\n", modelName)
     return nil, false
   }
-  if !aclCheck(&model, user, dbRead) {
+  if !db.aclCheck(&model, user, dbRead) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Read: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -324,9 +279,9 @@ func DBGetItemByCODE(modelName string, user *base.User, code string) ([]byte, bo
     return nil, false
   }
 
-  sql1 := dbHandleRead.Table(model.CODE)
+  sql1 := db.HandleRead.Table(model.CODE)
 
-  iv := GetClass(modelName)
+  iv := db.GetClass(modelName)
   
   var err error
   
@@ -342,20 +297,20 @@ func DBGetItemByCODE(modelName string, user *base.User, code string) ([]byte, bo
     return nil, false
   }
   
-  rowMap := maps.ConvertToMap(iv)
+  rowMap := ref.ConvertToMap(iv)
   jsonRes, _ := json.Marshal(rowMap)
   
   return jsonRes, true
 }
 
   
-func DBUpdateItemBy(modelName string, user *base.User, search string, param string, data *map[string]interface{}) bool {
-  m, ok := mods[modelName]
+func (db *DBConn) DBUpdateItemBy(modelName string, user *base.User, search string, param string, data *map[string]interface{}) bool {
+  m, ok := db.mods[modelName]
   if !ok {
     glog.Errorf("ERR: Model(%s) not found", modelName)
     return false
   }
-  if !aclCheck(&m, user, dbUpdate) {
+  if !db.aclCheck(&m, user, dbUpdate) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Update: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -364,10 +319,10 @@ func DBUpdateItemBy(modelName string, user *base.User, search string, param stri
     return false
   }
 
-  iv := GetClass(modelName)
-  maps.ConvertFromMap(iv, data)
+  iv := db.GetClass(modelName)
+  ref.ConvertFromMap(iv, data)
 
-  sql1 := dbHandleWrite.Table(m.CODE)
+  sql1 := db.HandleWrite.Table(m.CODE)
   x := iv
   err := sql1.Where(search, param).First(x).Error
   
@@ -381,13 +336,13 @@ func DBUpdateItemBy(modelName string, user *base.User, search string, param stri
   return true
 }
 
-func DBDeleteItemByID(modelName string, user *base.User, id string) bool {
-  model, ok := mods[modelName]
+func (db *DBConn) DBDeleteItemByID(modelName string, user *base.User, id string) bool {
+  model, ok := db.mods[modelName]
   if !ok {
     glog.Errorf("ERR: Model(%s) not found\n", modelName)
     return false
   }
-  if !aclCheck(&model, user, dbDelete) {
+  if !db.aclCheck(&model, user, dbDelete) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Delete: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -402,10 +357,10 @@ func DBDeleteItemByID(modelName string, user *base.User, id string) bool {
     return false
   }
   
-  sql1 := dbHandleWrite.Table(model.CODE)
+  sql1 := db.HandleWrite.Table(model.CODE)
 
-  iv := GetClass(modelName)
-  maps.SetFieldUUID(iv, uid, "ID")
+  iv := db.GetClass(modelName)
+  ref.SetFieldUUID(iv, uid, "ID")
   err = sql1.Delete(iv).Error
   // db.Unscoped().Delete(&order)
   //// DELETE FROM orders WHERE id=10;
@@ -414,6 +369,6 @@ func DBDeleteItemByID(modelName string, user *base.User, id string) bool {
     glog.Errorf("ERR: Model(%s) UUID<%v> not found\n", modelName, id)
     return false
   }
-  go sendNatsMsg(&model, dbUpdate, iv)
+  go db.sendNatsMsg(&model, dbUpdate, iv)
   return true
 }

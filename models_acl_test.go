@@ -18,14 +18,15 @@ func TestCheckACL(t *testing.T) {
 	// flag.Set("v", "9")
 	flag.Parse()
   
+  dbconn := New()
   
-  assert.Equal(t, dbCreate, aclCalcCRUD("c"))
-  assert.Equal(t, dbDelete, aclCalcCRUD("d"))
-  assert.Equal(t, dbCreate | dbRead | dbUpdate | dbDelete, aclCalcCRUD("crud"))
+  assert.Equal(t, dbCreate, dbconn.aclCalcCRUD("c"))
+  assert.Equal(t, dbDelete, dbconn.aclCalcCRUD("d"))
+  assert.Equal(t, dbCreate | dbRead | dbUpdate | dbDelete, dbconn.aclCalcCRUD("crud"))
   
-  c := aclCalcCRUD("ocrud")
+  c := dbconn.aclCalcCRUD("ocrud")
   assert.Equal(t, "ocrud", c.String())
-  c = aclCalcCRUD("cru")
+  c = dbconn.aclCalcCRUD("cru")
   assert.Equal(t, "cru", c.String())
   
   var res bool
@@ -35,37 +36,37 @@ func TestCheckACL(t *testing.T) {
   userOther := base.User{EMail: "guest@", Group: "user_crm", Groups: []string{"admin_system", "user_crm"}}
   
   modelOrg := ModelInfo{CODE: "org", Permissions: map[string]ModelCRUD{"admin": ModelCRUD{CRUD: "crud"}}}
-  aclRecalcCRUD(&modelOrg.Permissions)
+  dbconn.aclRecalcCRUD(&modelOrg.Permissions)
 
-  res = aclCheck(&modelOrg, nil, dbCreate)
+  res = dbconn.aclCheck(&modelOrg, nil, dbCreate)
   assert.Equal(t, false, res)
 
-  res = aclCheck(&modelOrg, &userAdmin, dbCreate)
+  res = dbconn.aclCheck(&modelOrg, &userAdmin, dbCreate)
   assert.Equal(t, true, res)
 
-  res = aclCheck(&modelOrg, &userUser, dbCreate)
+  res = dbconn.aclCheck(&modelOrg, &userUser, dbCreate)
   assert.Equal(t, false, res)
 
-  res = aclCheck(&modelOrg, &userOther, dbCreate)
+  res = dbconn.aclCheck(&modelOrg, &userOther, dbCreate)
   assert.Equal(t, false, res)
 
 
   modelMsg := ModelInfo{CODE: "messages", Permissions: map[string]ModelCRUD{"user": ModelCRUD{CRUD: "rud"}}}
-  aclRecalcCRUD(&modelMsg.Permissions)
+  dbconn.aclRecalcCRUD(&modelMsg.Permissions)
 
-  res = aclCheck(&modelMsg, &userAdmin, dbCreate)
+  res = dbconn.aclCheck(&modelMsg, &userAdmin, dbCreate)
   assert.Equal(t, false, res)
 
-  res = aclCheck(&modelMsg, &userUser, dbCreate)
+  res = dbconn.aclCheck(&modelMsg, &userUser, dbCreate)
   assert.Equal(t, false, res)
-  res = aclCheck(&modelMsg, &userUser, dbRead)
+  res = dbconn.aclCheck(&modelMsg, &userUser, dbRead)
   assert.Equal(t, true, res)
-  res = aclCheck(&modelMsg, &userUser, dbUpdate)
+  res = dbconn.aclCheck(&modelMsg, &userUser, dbUpdate)
   assert.Equal(t, true, res)
-  res = aclCheck(&modelMsg, &userUser, dbDelete)
+  res = dbconn.aclCheck(&modelMsg, &userUser, dbDelete)
   assert.Equal(t, true, res)
 
-  res = aclCheck(&modelMsg, &userOther, dbCreate)
+  res = dbconn.aclCheck(&modelMsg, &userOther, dbCreate)
   assert.Equal(t, false, res)
   
   

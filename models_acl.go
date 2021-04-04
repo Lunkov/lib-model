@@ -67,9 +67,7 @@ type PermissionUser struct {
   CanDelete      bool          `db:"can_delete"                 json:"can_delete"    yaml:"can_delete"       gorm:"column:can_delete"`
 }
 
-var cacheGroups = make(map[string]uuid.UUID)
-
-func aclCheck(model *ModelInfo, user *base.User, action TypeActionDB) bool {
+func (db *DBConn) aclCheck(model *ModelInfo, user *base.User, action TypeActionDB) bool {
   if user == nil && len(model.Permissions) < 1 {
     return true
   }
@@ -80,7 +78,7 @@ func aclCheck(model *ModelInfo, user *base.User, action TypeActionDB) bool {
       return false
     }
   }
-  crud, ok := findGroupCRUD(model, user)
+  crud, ok := db.findGroupCRUD(model, user)
   if !ok {
     if user != nil {
       glog.Errorf("ERR: MODELS ACL: USER(%s). Access denied. MODEL '%s' CRUD not found", user.EMail, model.CODE)
@@ -100,11 +98,11 @@ func aclCheck(model *ModelInfo, user *base.User, action TypeActionDB) bool {
   return true
 }
 
-func aclDBCheckID(model *ModelInfo, user *base.User, object_id uuid.UUID, action TypeActionDB) bool {
+func (db *DBConn) aclDBCheckID(model *ModelInfo, user *base.User, object_id uuid.UUID, action TypeActionDB) bool {
   return true
 }
 
-func aclSetOwner(modelName string, user *base.User, data *map[string]interface{}) bool {
+func (db *DBConn) aclSetOwner(modelName string, user *base.User, data *map[string]interface{}) bool {
   if user == nil {
     glog.Errorf("ERR: Access denied. Create|Update (UseOwnerField): User(NULL) => aclSetOwner(%s)", modelName)
     return false
@@ -117,7 +115,7 @@ func aclSetOwner(modelName string, user *base.User, data *map[string]interface{}
   return true
 }
 
-func aclIsOwner(modelName string, user *base.User, data *map[string]interface{}) bool {
+func (db *DBConn) aclIsOwner(modelName string, user *base.User, data *map[string]interface{}) bool {
   if user == nil {
     glog.Errorf("ERR: Access denied. Update (UseOwnerField): User(NULL) => aclIsOwner(%s)", modelName)
     return false
@@ -130,7 +128,7 @@ func aclIsOwner(modelName string, user *base.User, data *map[string]interface{})
   return id == user.ID
 }
 
-func findGroupCRUD(model *ModelInfo, user *base.User) (*ModelCRUD, bool) {
+func (db *DBConn) findGroupCRUD(model *ModelInfo, user *base.User) (*ModelCRUD, bool) {
   if user != nil {
     crud, ok := model.Permissions[user.Group]
     if ok {
@@ -150,14 +148,14 @@ func findGroupCRUD(model *ModelInfo, user *base.User) (*ModelCRUD, bool) {
   return nil, false
 }
 
-func aclRecalcCRUD(permissions *map[string]ModelCRUD) {
+func (db *DBConn) aclRecalcCRUD(permissions *map[string]ModelCRUD) {
   for group, perm := range (*permissions) {
-    perm.CRUDm = aclCalcCRUD(perm.CRUD)
+    perm.CRUDm = db.aclCalcCRUD(perm.CRUD)
     (*permissions)[group] = perm
   }
 }
 
-func aclCalcCRUD(crud string) TypeActionDB {
+func (db *DBConn) aclCalcCRUD(crud string) TypeActionDB {
   crudLower := strings.ToLower(crud)
   c := dbUndef
   if strings.Contains(crudLower, "o") {
@@ -198,6 +196,6 @@ func (crud *TypeActionDB) String() string {
   return res
 }
 
-func aclFilterFields(model *ModelInfo, user *base.User, action TypeActionDB) (string, bool) {
+func (db *DBConn) aclFilterFields(model *ModelInfo, user *base.User, action TypeActionDB) (string, bool) {
   return "", false
 }

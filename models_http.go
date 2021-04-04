@@ -74,14 +74,14 @@ func operators(op string) string {
   return ""
 }
 
-func HTTPTableGet(r *http.Request, modelName string, user *base.User) ([]byte, int, bool) {
-  m, ok := mods[modelName]
+func (db *DBConn) HTTPTableGet(r *http.Request, modelName string, user *base.User) ([]byte, int, bool) {
+  m, ok := db.mods[modelName]
   if !ok {
     glog.Errorf("ERR: Model(%s) not found\n", modelName)
     return []byte(""), 0, false
   }
 
-  if !aclCheck(&m, user, dbRead) {
+  if !db.aclCheck(&m, user, dbRead) {
     if user != nil {
       glog.Errorf("ERR: Access denied. Read: User(%s) => Model(%s)", user.EMail, modelName)
     } else {
@@ -100,10 +100,10 @@ func HTTPTableGet(r *http.Request, modelName string, user *base.User) ([]byte, i
   
   where := parserAND(r.Form.Get("and"))
   
-  return dbTableGet(&m, modelName, where, ar_fields, ar_order, offset, limit)
+  return db.dbTableGet(&m, modelName, where, ar_fields, ar_order, offset, limit)
 }
 
-func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+func (db *DBConn) decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
   if r.Header.Get("Content-Type") != "" {
     value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
     if value != "application/json" {
