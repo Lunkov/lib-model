@@ -33,12 +33,6 @@ type RedisInfo struct {
   Url               string   `yaml:"url"`
   Max_connections   int      `yaml:"max_connections"`
 }
-/*
-type CacheInfo struct {
-  Mode          string      `yaml:"mode"`
-  Expiry_time   int         `yaml:"expiry_time"`
-  Redis         RedisInfo   `yaml:"redis"`
-}*/
 
 type ModelCRUD struct {
   CRUD          string                     `json:"crud"                         yaml:"crud"`
