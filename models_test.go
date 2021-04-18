@@ -47,13 +47,13 @@ func TestCheckModelsAutoMigrate(t *testing.T) {
   flag.Set("v", "9")
   flag.Parse()
 
-  conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
+  conn := "host=localhost port=14345 user=dbuser dbname=testdb password=password sslmode=disable"
   TEST_MODEL := "test_org"
   
   dbconn := New()
   
-  dbconn.BaseAdd("organization", reflect.TypeOf(models.Organization{}))
-  dbconn.BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
+  dbconn.BaseAdd("organization",  reflect.TypeOf(models.Organization{}))
+  dbconn.BaseAdd("doc",       reflect.TypeOf(DocInfo{}))
 
   dbconn.Init(conn, conn, "./etc.test/")
   
@@ -82,7 +82,7 @@ func TestCheckModelsByClass(t *testing.T) {
 
 	glog.Info("Logging configured")
 
-  conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
+  conn := "host=localhost port=14345 user=dbuser dbname=testdb password=password sslmode=disable"
   TEST_MODEL := "test_org"
   
   dbconn := New()
@@ -152,7 +152,7 @@ func TestCheckModelsByInterfaceUnderMap(t *testing.T) {
   
   TEST_MODEL := "test_org"
   
-  conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
+  conn := "host=localhost port=14345 user=dbuser dbname=testdb password=password sslmode=disable"
   
   dbconn.BaseAdd("organization", reflect.TypeOf(models.Organization{}))
   dbconn.BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
@@ -192,7 +192,7 @@ func TestCheckModelsByInterface(t *testing.T) {
   TEST_MODEL := "test_org"
   dbconn := New()
   
-  conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
+  conn := "host=localhost port=14345 user=dbuser dbname=testdb password=password sslmode=disable"
   dbconn.BaseAdd("organization", reflect.TypeOf(models.Organization{}))
   dbconn.BaseAdd("doc",          reflect.TypeOf(DocInfo{}))
 
@@ -254,7 +254,7 @@ func TestCheckModelsGetList(t *testing.T) {
 
   assert.Equal(t, 14, dbconn.BaseCount())
 
-  conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
+  conn := "host=localhost port=14345 user=dbuser dbname=testdb password=password sslmode=disable"
   dbconn.Init(conn, conn, "./etc.test/")
 
   db := dbconn.GetDBHandleWrite()
@@ -396,7 +396,7 @@ func TestCheckModelsGetListComplexUpdate(t *testing.T) {
   
   TEST_MODEL := "test_org_2"
   
-  conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
+  conn := "host=localhost port=14345 user=dbuser dbname=testdb password=password sslmode=disable"
   dbconn.Init(conn, conn, "./etc.test/")
 
   assert.Equal(t, 14, dbconn.BaseCount())
@@ -550,7 +550,7 @@ func TestCheckModelsOwner(t *testing.T) {
   TEST_MODEL := "test_project"
   dbconn := New()
   
-  conn := "host=localhost port=15432 user=dbuser dbname=testdb password=password sslmode=disable"
+  conn := "host=localhost port=14345 user=dbuser dbname=testdb password=password sslmode=disable"
   dbconn.Init(conn, conn, "./etc.test/")
 
   assert.Equal(t, 13, dbconn.BaseCount())

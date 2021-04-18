@@ -4,7 +4,7 @@ import (
   "testing"
   "github.com/stretchr/testify/assert"
   
-  "github.com/Lunkov/lib-maps"
+  "github.com/Lunkov/lib-ref"
 )
 
 
@@ -18,7 +18,7 @@ func TestAddress(t *testing.T) {
   adr.City    = "Moscow"
   
   m_need := map[string]interface{}{"city":"Moscow", "country":"Russia", "index":"127282"}
-  m := maps.ConvertToMap(adr)
+  m := ref.ConvertToMap(adr)
   assert.Equal(t, m_need, m)
 
 }

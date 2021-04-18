@@ -102,33 +102,37 @@ func (db *DBConn) Init(connectStrWrite string, connectStrRead string, confPath s
   
   db.configPath = confPath
 
-  db.HandleWrite, err = gorm.Open("postgres", connectStrWrite)
-  if err != nil {
-    glog.Errorf("ERR: MODELS: failed to connect database (write): %v\n", err)
-    return false
+  if len(connectStrWrite) > 10 {
+    db.HandleWrite, err = gorm.Open("postgres", connectStrWrite)
+    if err != nil {
+      glog.Errorf("ERR: MODELS: failed to connect database (write): %v\n", err)
+      return false
+    }
+    // Get generic database object sql.DB to use its functions
+    sqlDB := db.HandleWrite.DB()
+    // SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+    sqlDB.SetMaxIdleConns(10)
+    // SetMaxOpenConns sets the maximum number of open connections to the database.
+    sqlDB.SetMaxOpenConns(100)
+    // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+    sqlDB.SetConnMaxLifetime(time.Hour)
   }
-  // Get generic database object sql.DB to use its functions
-  sqlDB := db.HandleWrite.DB()
-  // SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
-  sqlDB.SetMaxIdleConns(10)
-  // SetMaxOpenConns sets the maximum number of open connections to the database.
-  sqlDB.SetMaxOpenConns(100)
-  // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
-  sqlDB.SetConnMaxLifetime(time.Hour)
   
-  db.HandleRead, err = gorm.Open("postgres", connectStrRead)
-  if err != nil {
-    glog.Errorf("ERR: MODELS: failed to connect database (read): %v\n", err)
-    return false
+  if len(connectStrRead) > 10 {
+    db.HandleRead, err = gorm.Open("postgres", connectStrRead)
+    if err != nil {
+      glog.Errorf("ERR: MODELS: failed to connect database (read): %v\n", err)
+      return false
+    }
+    // Get generic database object sql.DB to use its functions
+    sqlDB := db.HandleRead.DB()
+    // SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+    sqlDB.SetMaxIdleConns(10)
+    // SetMaxOpenConns sets the maximum number of open connections to the database.
+    sqlDB.SetMaxOpenConns(100)
+    // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+    sqlDB.SetConnMaxLifetime(time.Hour)
   }
-  // Get generic database object sql.DB to use its functions
-  sqlDB = db.HandleRead.DB()
-  // SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
-  sqlDB.SetMaxIdleConns(10)
-  // SetMaxOpenConns sets the maximum number of open connections to the database.
-  sqlDB.SetMaxOpenConns(100)
-  // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
-  sqlDB.SetConnMaxLifetime(time.Hour)
 
 
   if glog.V(9) {
@@ -142,7 +146,7 @@ func (db *DBConn) Init(connectStrWrite string, connectStrRead string, confPath s
 
 func (db *DBConn) LoadData() {
   for _, model := range db.mods {
-    glog.Infof("LOG: Init(%s)\n", model.CODE)
+    glog.Infof("LOG: Init(%s)", model.CODE)
     dbTr := db.HandleWrite.Table(model.CODE).Begin()
     db.loadDataClass(dbTr, model.CODE, db.configPath + "/data", model.CODE)
     dbTr.Commit()
@@ -167,7 +171,7 @@ func (db *DBConn) loadDataClass(dbHandle *gorm.DB, modelCODE string, configPath 
   filepath.Walk(configPath + "/" + tableName, func(filename string, f os.FileInfo, err error) error {
     if f != nil && f.IsDir() == false {
       if glog.V(2) {
-        glog.Infof("FILE: %s\n", filename)
+        glog.Infof("FILE: %s", filename)
       }
       var err error
       yamlFile, err := ioutil.ReadFile(filename)
